@@ -1,3 +1,5 @@
+import pandas as pd
+
 from ifrs17.DataStructure import *
 from ifrs17 import Import
 from ifrs17 import Importers
@@ -37,3 +39,19 @@ Workspace.InitializeFrom(DataSource)
 Import.FromFile("YieldCurve.xlsx", DataSource, type_=YieldCurve)
 
 Import.FromFile("Cashflows.xlsx", DataSource, format_=ImportFormats.Cashflow)
+
+
+def ifrsvars2df(vars: list[IfrsVariable]):
+    data = []
+    for v in vars:
+        data.append({
+            'DataNode': v.DataNode,
+            'AocType': v.AocType,
+            'Novelty': v.Novelty,
+            'AmountType': v.AmountType,
+            'AccidentYear': v.AccidentYear,
+            'EstimateType': v.EstimateType,
+            'EconomicBasis': v.EconomicBasis,
+            'Value': v.Value
+        })
+    return pd.DataFrame.from_records(data)
