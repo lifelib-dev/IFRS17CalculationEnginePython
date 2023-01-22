@@ -139,6 +139,10 @@ class GetCashflowIdentities(GetIdentities):
 
     @property
     def ParsedIdentities(self) -> list[ImportIdentity]:
+        # Debug
+        # for v in self.GetStorage().GetRawVariables(self.Identity):
+        #     print('Stop')
+
         return [ImportIdentity.from_rv(v) for v in self.GetStorage().GetRawVariables(self.Identity)]
 
     @property
@@ -230,6 +234,10 @@ class ParentAocStep(IScope):     #: IScope<(ImportIdentity Id, string AmountType
 
     @property
     def ParsedAocSteps(self) -> set[AocStep]:
+        # Debug
+        # for id_ in self.GetScope(GetIdentities, self.Identity.Id.DataNode).ParsedIdentities:
+        #     print('Stop')
+
         return {AocStep(id_.AocType, id_.Novelty) for id_ in self.GetScope(GetIdentities, self.Identity.Id.DataNode).ParsedIdentities}
 
     @property

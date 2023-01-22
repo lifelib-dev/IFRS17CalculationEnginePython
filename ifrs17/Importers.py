@@ -283,6 +283,12 @@ def GetArgsFromMainAsync(PartitionType: IKeyedType, dataSet: IDataSet) -> Import
 
 
 def DataNodeFactoryAsync(dataSet: IDataSet, tableName: str, args: ImportArgs):
+
+    # Debug
+    # result = []
+    # for p in DataSource.Query(PartitionByReportingNode):
+    #     if p.ReportingNode == args.ReportingNode and p.Scenario == '':
+    #         result.append(p)
     
     partition = [p for p in DataSource.Query(PartitionByReportingNode)
                  if p.ReportingNode == args.ReportingNode and p.Scenario == ''][0]

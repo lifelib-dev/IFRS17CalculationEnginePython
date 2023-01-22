@@ -1,3 +1,4 @@
+import dataclasses
 from collections import namedtuple
 from .DataStructure import *
 import ifrs17.Query
@@ -252,8 +253,8 @@ class ImportStorage:
             temp = [v for v in temp if v.DataNode in primaryScope]
             openingRawVariables = []
             for rv in temp:
-                x = type(rv)(rv)
-                x.AocTeyp = AocTypes.BOP
+                x = dataclasses.replace(rv)
+                x.AocType = AocTypes.BOP
                 x.Novelty = Novelties.I
                 x.Values = [i for i in rv.Values if i != MonthInAYear]
                 x.Partition = self.TargetPartition
@@ -263,7 +264,7 @@ class ImportStorage:
             temp = [v for v in temp if v.DataNode in allImportScopesNotAtInceptionYear]
             openingIfrsVariables = []
             for iv in temp:
-                x = type(rv)(rv)
+                x = dataclasses.replace(iv)
                 x.AocType = AocTypes.BOP
                 x.Novelty = Novelties.I
                 x.Partition = self.TargetPartition

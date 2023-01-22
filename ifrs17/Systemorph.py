@@ -62,7 +62,7 @@ class IQuerySource:
             if issubclass(k, type_):
                 result.extend(self._data[k])
 
-        return result   #self._data.get(type_, [])
+        return result
 
     def DeleteAsync(self, type_: type, data: Collection):
         records = self._data.get(type_, [])
@@ -71,7 +71,7 @@ class IQuerySource:
                 records.remove(r)
 
     def UpdateAsync(self, type_: type, data: Collection):
-        self._data[type_] = data.copy()
+        self._data.setdefault(type_, []).extend(data)
 
     def UpdateAsync2(self, data):
         self._data.setdefault(type(data), []).append(data)
@@ -102,7 +102,6 @@ class IQuerySource:
 
         def __init__(self, data: "IQuerySource"):
             self._querysource = data
-            # self._current = {}
 
         def GetKeyForInstanceAsync(self, PartitionType: IKeyedType, args: Generic):
             try:
@@ -123,11 +122,6 @@ class IQuerySource:
                 return x.Id
             else:
                 return uuid.uuid4()
-                # kwargs = {'Id': uuid.uuid4()}
-                # for f in fields:
-                #     kwargs[f] = getattr(args, f)
-                # self._querysource.UpdateAsync(PartitionType,
-                #                               PartitionType(**kwargs))
 
         def SetAsync(self, PartitionType: IKeyedType, Id: Guid):
             self._querysource._current_partition[PartitionType.__name__] = Id
