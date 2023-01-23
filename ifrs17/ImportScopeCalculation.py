@@ -702,12 +702,12 @@ class PvLocked(IScope):     #<ImportIdentity, ImportStorage>
         temp2 = []
         for at in temp:
 
+            # if self.Identity.AocType == 'BOP' and self.Identity.Novelty == 'I':
+            #     print('stop')
+
             # # Debug
             # for ay in self.accidentYears:
             #     temp3 = self.GetScope(PresentValue, IdentityTuple(self.Identity, at, self.EstimateType, ay), self.EconomicBasis)
-
-            # if self.Identity.AocType == 'IA':
-            #     print('stop')
 
             temp2 += [self.GetScope(PresentValue, IdentityTuple(self.Identity, at, self.EstimateType, ay), self.EconomicBasis) for ay in self.accidentYears]
 

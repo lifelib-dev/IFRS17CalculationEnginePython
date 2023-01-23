@@ -1,5 +1,5 @@
 import pandas as pd
-
+from ifrs17.utils import *
 from ifrs17.DataStructure import *
 from ifrs17 import Import
 from ifrs17 import Importers
@@ -45,22 +45,17 @@ Import.FromFile("CF_DE_2021_12.xlsx", DataSource, format_=ImportFormats.Cashflow
 Import.FromFile("CF_DE_2022_12.xlsx", DataSource, format_=ImportFormats.Cashflow)
 
 
-def ifrsvars2df(vars: list[IfrsVariable]):
-    data = []
-    for v in vars:
-        data.append({
-            'DataNode': v.DataNode,
-            'AocType': v.AocType,
-            'Novelty': v.Novelty,
-            'AmountType': v.AmountType,
-            'AccidentYear': v.AccidentYear,
-            'EstimateType': v.EstimateType,
-            'EconomicBasis': v.EconomicBasis,
-            'Value': v.Value
-        })
-    return pd.DataFrame.from_records(data)
+df = get_ifrsvars(DataSource)
 
+# # In-Force
+#
+# df.loc[(df['Year'] == 2022) & (df['EconomicBasis'] == 'L') & (df['AmountType'] == 'PR') & (df['Novelty'] == 'I')]
+#
+# df.loc[(df['Year'] == 2022) & (df['EconomicBasis'] == 'L') & (df['AmountType'] == 'CL') & (df['Novelty'] == 'I')]
+#
+# # New Business
+#
+# df.loc[(df['Year'] == 2022) & (df['EconomicBasis'] == 'L') & (df['AmountType'] == 'PR') & (df['Novelty'] == 'N')]
+#
+# df.loc[(df['Year'] == 2022) & (df['EconomicBasis'] == 'L') & (df['AmountType'] == 'CL') & (df['Novelty'] == 'N')]
 
-df = ifrsvars2df(DataSource.Query(IfrsVariable))
-
-print(df.loc[df['DataNode'] == 'GIC1_DE'].loc[df['EconomicBasis'] == 'L'])

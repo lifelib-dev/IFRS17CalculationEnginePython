@@ -256,7 +256,7 @@ class ImportStorage:
                 x = dataclasses.replace(rv)
                 x.AocType = AocTypes.BOP
                 x.Novelty = Novelties.I
-                x.Values = [i for i in rv.Values if i != MonthInAYear]
+                x.Values = rv.Values[MonthInAYear:]
                 x.Partition = self.TargetPartition
                 openingRawVariables.append(x)
 
