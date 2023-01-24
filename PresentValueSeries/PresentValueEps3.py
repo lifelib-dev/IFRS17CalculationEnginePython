@@ -1,9 +1,13 @@
+import os
 import pandas as pd
 from ifrs17.utils import *
 from ifrs17.DataStructure import *
 from ifrs17 import Import
 from ifrs17 import Importers
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+DataSource.Reset()
 
 result = Import.FromFile("Dimensions.xlsx", DataSource, type_=[
     ReportingNode,

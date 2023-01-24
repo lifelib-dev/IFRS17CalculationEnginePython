@@ -450,6 +450,16 @@ class IfrsVariable(BaseDataRecord):
     EstimateType: str
     EconomicBasis: str
 
+    def __hash__(self):
+        return hash((self.DataNode, self.AocType, self.Novelty, self.AmountType, self.AccidentYear, self.EstimateType, self.EconomicBasis))
+
+    def __eq__(self, other):
+        return (self.DataNode, self.AocType, self.Novelty, self.AmountType, self.AccidentYear, self.EstimateType, self.EconomicBasis) == (
+            other.DataNode, other.AocType, other.Novelty, other.AmountType, other.AccidentYear, other.EstimateType, other.EconomicBasis)
+
+    def __lt__(self, other):
+        return ((self.DataNode, self.AocType, self.Novelty, self.AmountType, self.AccidentYear, self.EstimateType, self.EconomicBasis) < (
+            other.DataNode, other.AocType, other.Novelty, other.AmountType, other.AccidentYear, other.EstimateType, other.EconomicBasis))
 
 # Import Identity
 

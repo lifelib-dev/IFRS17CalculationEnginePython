@@ -852,7 +852,7 @@ def _DefineFormatCashflow(options, dataSet: IDataSet):
     #     for x in s.CalculatedIfrsVariables:
     #         ivs.append(x)
 
-    ivs = [x for s in universe.GetScopes(ComputeIfrsVarsCashflows, identities) for x in s.CalculatedIfrsVariables]
+    ivs = sorted([x for s in universe.GetScopes(ComputeIfrsVarsCashflows, identities) for x in s.CalculatedIfrsVariables])
 
     # # For debug
     # ivs = []

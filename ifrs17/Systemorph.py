@@ -56,6 +56,10 @@ class IQuerySource:
         self._data = {}
         self._current_partition = {}
 
+    def Reset(self):
+        self._data.clear()
+        self._current_partition.clear()
+
     def Query(self, type_: type):
         result = []
         for k in self._data:
