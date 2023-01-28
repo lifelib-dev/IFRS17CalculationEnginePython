@@ -75,10 +75,16 @@ class IQuerySource:
                 records.remove(r)
 
     def UpdateAsync(self, type_: type, data: Collection):
-        self._data.setdefault(type_, []).extend(data)
+        vals = self._data.setdefault(type_, [])
+        if hasattr(type_, '__eq__'):
+            for x in data:
+                if x not in vals:
+                    vals.append(x)
+        else:
+            vals.extend(data)
 
     def UpdateAsync2(self, data):
-        self._data.setdefault(type(data), []).append(data)
+        self.UpdateAsync(type(data), [data])
 
     def UpdateAsync3(self, datalist):
         assert len(set(type(x) for x in datalist)) <= 1

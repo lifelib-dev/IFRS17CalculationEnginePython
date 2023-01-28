@@ -45,7 +45,7 @@ class ValuationApproaches:
 
 class LiabilityTypes:
     LRC = "LRC"   # Liability for Remaining Coverage
-    LIC = "LTC"   # Liability Incurred Claims
+    LIC = "LIC"   # Liability Incurred Claims
 
 
 class EstimateTypes:

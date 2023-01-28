@@ -292,10 +292,22 @@ class PartitionByReportingNode(IfrsPartition):
     pass
 
 
+@total_ordering
 @dataclass
 class PartitionByReportingNodeAndPeriod(IfrsPartition):
     Year: int = 0
     Month: int = 0
+
+    def __hash__(self):
+        return hash((self.Id, self.ReportingNode, self.Scenario, self.Year, self.Month))
+
+    def __eq__(self, other):
+        return (self.Id, self.ReportingNode, self.Scenario, self.Year, self.Month) == (
+            other.Id, other.ReportingNode, other.Scenario, other.Year, other.Month)
+
+    def __lt__(self, other):
+        return ((self.Id, self.ReportingNode, self.Scenario, self.Year, self.Month) < (
+            other.Id, other.ReportingNode, other.Scenario, other.Year, other.Month))
 
 
 # Policy-related Data Structures
@@ -392,6 +404,7 @@ class InterDataNodeParameter(DataNodeParameter):
         return (self.LinkedDataNode, self.ReinsuranceCoverage, self.Scenario) == (
             other.LinkedDataNode, other.ReinsuranceCoverage, other.Scenario)
 
+
 @dataclass
 class DataNodeData:
 
@@ -444,6 +457,7 @@ class RawVariable(BaseDataRecord):
     EstimateType: str
 
 
+@total_ordering
 @dataclass
 class IfrsVariable(BaseDataRecord):
     Value: float
@@ -454,12 +468,13 @@ class IfrsVariable(BaseDataRecord):
         return hash((self.DataNode, self.AocType, self.Novelty, self.AmountType, self.AccidentYear, self.EstimateType, self.EconomicBasis))
 
     def __eq__(self, other):
-        return (self.DataNode, self.AocType, self.Novelty, self.AmountType, self.AccidentYear, self.EstimateType, self.EconomicBasis) == (
-            other.DataNode, other.AocType, other.Novelty, other.AmountType, other.AccidentYear, other.EstimateType, other.EconomicBasis)
+        if eq := self.Id == other.Id:
+            assert hash(self) == hash(other)
+        return eq
 
     def __lt__(self, other):
-        return ((self.DataNode, self.AocType, self.Novelty, self.AmountType, self.AccidentYear, self.EstimateType, self.EconomicBasis) < (
-            other.DataNode, other.AocType, other.Novelty, other.AmountType, other.AccidentYear, other.EstimateType, other.EconomicBasis))
+        return ((self.DataNode, self.AocType, self.Novelty, self.AmountType, self.AccidentYear, self.EstimateType, self.EconomicBasis, self.Id) < (
+            other.DataNode, other.AocType, other.Novelty, other.AmountType, other.AccidentYear, other.EstimateType, other.EconomicBasis, self.Id))
 
 # Import Identity
 
