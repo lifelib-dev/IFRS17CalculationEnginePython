@@ -205,7 +205,7 @@ class ValidAmountType(IScope):  # IScope<string, ImportStorage>
     
     @property
     def BeAmountTypes(self) -> set[str]:
-        temp = {rv.AmountType for rv in self.GetStorage().GetRawVariables(self.Identity) if rv.AmountType != ''}
+        temp = {rv.AmountType for rv in self.GetStorage().GetRawVariables(self.Identity) if rv.AmountType}
         if self.GetStorage().DataNodeDataBySystemName[self.Identity].IsReinsurance:
             temp.add(AmountTypes.CDR)
         return temp
@@ -544,10 +544,11 @@ class IWithInterestAccretionForCreditRisk(IScope):
 
     @property
     def nominalValuesCreditRisk(self) -> list[float]:
-        identity = IdentityTuple(*self.Identity)
         importid = dataclasses.replace(self.Identity.Id)
         importid.AocType = AocTypes.CF
-        identity.Id = importid
+        kwargs = self.Identity._asdict()
+        kwargs['Id'] = importid
+        identity = IdentityTuple(**kwargs)
 
         return -1 * self.GetScope(CreditDefaultRiskNominalCashflow, identity).Values
 
@@ -567,7 +568,8 @@ class IWithInterestAccretionForCreditRisk(IScope):
 
         for i in range(len(self.nominalClaimsCashflow) - 1, -1, -1):        #(var i = nominalClaimsCashflow.Length - 1; i >= 0; i--)
 
-            interestOnClaimsCashflow[i] = 1 / GetElementOrDefault(self.monthlyInterestFactor, int(i/12)) * (interestOnClaimsCashflow[i + 1] + self.nominalClaimsCashflow[i] - (self.nominalClaimsCashflow[i + 1] if i+1 < len(self.nominalClaimsCashflow) else 0))
+            interestOnClaimsCashflow[i] = 1 / GetElementOrDefault(self.monthlyInterestFactor, int(i/12)) * (
+                    (interestOnClaimsCashflow[i + 1] if i+1 < len(interestOnClaimsCashflow) else 0) + self.nominalClaimsCashflow[i] - (self.nominalClaimsCashflow[i + 1] if i+1 < len(self.nominalClaimsCashflow) else 0))
             interestOnClaimsCashflowCreditRisk[i] = 1 / GetElementOrDefault(self.monthlyInterestFactor, int(i/12)) * (
                     math.exp(-self.nonPerformanceRiskRate) * (interestOnClaimsCashflowCreditRisk[i + 1] if i+1 < len(interestOnClaimsCashflowCreditRisk) else 0) + self.nominalClaimsCashflow[i] - (self.nominalClaimsCashflow[i + 1] if i+1 < len(self.nominalClaimsCashflow) else 0))
             effectCreditRisk[i] = interestOnClaimsCashflow[i] - interestOnClaimsCashflowCreditRisk[i]
@@ -779,7 +781,6 @@ class PvToIfrsVariable(IScope):
 
         result = []
         for x in [x for x in self.GetScope(PvCurrent, self.Identity).PresentValues if abs(x.Value) >= Precision]:
-
             result.append(IfrsVariable(
                 Id=uuid.uuid4(),
                 EconomicBasis = x.EconomicBasis,

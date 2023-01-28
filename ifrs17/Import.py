@@ -27,7 +27,8 @@ def DefineFormat(format: str, body: Callable[Options, IDataSet]):
 def _FromFileToDataSet(pathToFile: str):
     result: dict[str, pd.DataFrame] = {}
     for name in opyxl.load_workbook(pathToFile).sheetnames:
-        result[name] = pd.read_excel(pathToFile, sheet_name=name, na_values=[''])
+        result[name] = df = pd.read_excel(pathToFile, sheet_name=name, na_values=[''])
+        df.replace({float('nan'): None}, inplace=True)
 
     return IDataSet(result)
 

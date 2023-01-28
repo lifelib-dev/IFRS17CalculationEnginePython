@@ -1,3 +1,4 @@
+from ifrs17.utils import *
 from ifrs17.DataStructure import *
 from ifrs17 import Import
 from ifrs17 import Importers
@@ -61,18 +62,16 @@ result = Import.FromFile("Files/Dimensions.xlsx", DataSource, type_=[
     LiabilityType,
     Profitability,
     Currency,
-    # Partner,
-    # CreditRiskRating,
-    Scenario,
-    ProjectionConfiguration,
-    ExchangeRate
-])
-
-
-Import.FromFile("Files/Partner&CreditRating.xlsx", DataSource, type_=[
     Partner,
-    CreditRiskRating
+    CreditRiskRating,
+    Scenario,
+    ProjectionConfiguration
 ])
+
+# Import.FromFile("Files/Partner&CreditRating.xlsx", DataSource, type_=[
+#     Partner,
+#     CreditRiskRating
+# ])
 
 
 Import.FromFile("Files/Dimensions.xlsx", DataSource, format_=ImportFormats.AocConfiguration)
@@ -113,6 +112,8 @@ Import.FromFile("Files/DataNodeParameters_CH_2020_12.xlsx", DataSource, format_=
 Import.FromFile("Files/NominalCashflows_CH_2020_12.xlsx", DataSource, format_=ImportFormats.Cashflow)
 
 # await Import.FromFile("../Files/TransactionalData/Actuals_CH_2020_12.csv").WithFormat(ImportFormats.Actual).WithTarget(DataSource).ExecuteAsync()
+
+Import.FromFile("Files/NominalCashflows_CH_2021_3.xlsx", DataSource, format_=ImportFormats.Cashflow)
 # await Import.FromFile("../Files/TransactionalData/NominalCashflows_CH_2021_3.csv").WithFormat(ImportFormats.Cashflow).WithTarget(DataSource).ExecuteAsync()
 # await Import.FromFile("../Files/TransactionalData/Actuals_CH_2021_3.csv").WithFormat(ImportFormats.Actual).WithTarget(DataSource).ExecuteAsync()
 # await Import.FromFile("../Files/TransactionalData/SimpleValue_CH_2020_12.csv").WithFormat(ImportFormats.SimpleValue ).WithTarget(DataSource).ExecuteAsync()
@@ -125,3 +126,5 @@ Import.FromFile("Files/NominalCashflows_CH_2020_12.xlsx", DataSource, format_=Im
 Workspace.InitializeFrom(DataSource);
 ifrs17.Reset(Workspace)
 """
+
+df = get_ifrsvars(DataSource)

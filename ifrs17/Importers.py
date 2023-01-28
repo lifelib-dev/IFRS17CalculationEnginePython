@@ -242,7 +242,7 @@ def GetArgsFromMainAsync(PartitionType: IKeyedType, dataSet: IDataSet) -> Import
 
     main = mainTab.iloc[0]  # mainTab.Rows.First()
     reportingNode = main["ReportingNode"]
-    scenario = main["Scenario"] if 'Scenario' in mainTab.columns and not np.isnan(main["Scenario"]) else ""   # Convert nan to ''
+    scenario = main["Scenario"] if 'Scenario' in mainTab.columns and main["Scenario"] else ""   # Convert nan to ''
 
     args: ImportArgs
 
