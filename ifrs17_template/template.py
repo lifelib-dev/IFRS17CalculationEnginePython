@@ -1,3 +1,4 @@
+import os
 from ifrs17.utils import *
 from ifrs17.DataStructure import *
 from ifrs17 import Import
@@ -9,6 +10,8 @@ from ifrs17 import Importers
 #!import "Export/ExportConfiguration"
 #!import "Utils/TestHelper"
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+DataSource.Reset()
 
 #!eval-notebook "InitSystemorphRefDataToMemory"
 
@@ -127,4 +130,4 @@ Workspace.InitializeFrom(DataSource);
 ifrs17.Reset(Workspace)
 """
 
-df = get_ifrsvars(DataSource)
+df = get_ifrsvars2(DataSource)
