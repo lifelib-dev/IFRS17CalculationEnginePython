@@ -748,6 +748,54 @@ class PvCurrent(IScope):    #<ImportIdentity, ImportStorage>
         return sum(self.PresentValues)
 
 
+
+class RaLocked(IScope):
+
+    @property
+    def EconomicBasis(self) -> str:
+        return EconomicBases.L
+
+    @property
+    def EstimateType(self) -> str:
+        return EstimateTypes.RA
+
+    @property
+    def accidentYears(self) -> [int]:
+        return self.GetStorage().GetAccidentYears(self.Identity.DataNode)
+
+    @property
+    def PresentValues(self) -> [PresentValue]:
+        return [self.GetScope(PresentValue, IdentityTuple(self.Identity, None, self.EstimateType, ay), self.EconomicBasis) for ay in self.accidentYears]
+
+    @property
+    def Value(self) -> float:
+        return sum([pv.Value for pv in self.PresentValues])          # self.PresentValues.Aggregate().Value
+
+
+class RaCurrent(IScope):
+
+    @property
+    def EconomicBasis(self) -> str:
+        return EconomicBases.C
+
+    @property
+    def EstimateType(self) -> str:
+        return EstimateTypes.RA
+
+    @property
+    def accidentYears(self) -> [int]:
+        return self.GetStorage().GetAccidentYears(self.Identity.DataNode)
+
+    @property
+    def PresentValues(self) -> [PresentValue]:
+        return [self.GetScope(PresentValue, IdentityTuple(self.Identity, None, self.EstimateType, ay), self.EconomicBasis) for ay in self.accidentYears]
+
+    @property
+    def Value(self) -> float:
+        return sum([pv.Value for pv in self.PresentValues])
+
+
+
 class PvToIfrsVariable(IScope):
 
     @property
@@ -796,13 +844,60 @@ class PvToIfrsVariable(IScope):
         return result
 
 
+class RaToIfrsVariable(IScope):     # <ImportIdentity, ImportStorage>
+
+    @property
+    def RaCurrent(self) -> [IfrsVariable]:
+
+        # # Debug
+        # for x in self.GetScope(RaCurrent, self.Identity).PresentValues:
+        #     if self.Identity.Novelty == 'N' and self.Identity.AocType == 'BOP':
+        #         print(x.Value)
+
+        result = []
+        for x in [x for x in self.GetScope(RaCurrent, self.Identity).PresentValues if abs(x.Value) >= Precision]:
+
+            result.append(IfrsVariable(
+                Id=uuid.uuid4(),
+                EconomicBasis = x.EconomicBasis,
+                EstimateType = x.Identity.EstimateType,
+                DataNode = x.Identity.Id.DataNode,
+                AocType = x.Identity.Id.AocType,
+                Novelty = x.Identity.Id.Novelty,
+                AccidentYear = x.Identity.AccidentYear,
+                AmountType = '',
+                Value = x.Value,
+                Partition = self.GetStorage().TargetPartition
+                ))
+        return result
+
+    @property
+    def RaLocked(self) -> [IfrsVariable]:
+
+        result = []
+        for x in [x for x in self.GetScope(RaLocked, self.Identity).PresentValues if abs(x.Value) >= Precision]:
+            result.append(IfrsVariable(
+                Id=uuid.uuid4(),
+                EconomicBasis = x.EconomicBasis,
+                EstimateType = x.Identity.EstimateType,
+                DataNode = x.Identity.Id.DataNode,
+                AocType = x.Identity.Id.AocType,
+                Novelty = x.Identity.Id.Novelty,
+                AccidentYear = x.Identity.AccidentYear,
+                AmountType = '',
+                Value = x.Value,
+                Partition = self.GetStorage().TargetPartition
+            ))
+        return result
+
+
 class ComputeIfrsVarsCashflows(
-    PvToIfrsVariable):  #, RaToIfrsVariable, DeferrableToIfrsVariable, EaForPremiumToIfrsVariable, TmToIfrsVariable):
+    PvToIfrsVariable, RaToIfrsVariable):  #, , DeferrableToIfrsVariable, EaForPremiumToIfrsVariable, TmToIfrsVariable):
 
 
     @property
     def CalculatedIfrsVariables(self) -> list[IfrsVariable]:
-        return self.PvLocked + self.PvCurrent
+        return self.PvLocked + self.PvCurrent + self.RaCurrent + self.RaLocked
 
                              # .Concat(RaCurrent)
                              # .Concat(RaLocked)

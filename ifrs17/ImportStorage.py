@@ -433,15 +433,6 @@ class ImportStorage:
 
     def GetValues(self, id_: ImportIdentity, whereClause: Callable[RawVariable, bool]) -> list[float]:
 
-        # # Debug
-        # for v in self.GetRawVariables(id_.DataNode):
-        #
-        #     if id_.AocType == 'CF':
-        #         print('Stop')
-        #
-        #     if (v.AocType, v.Novelty) == id_.AocStep and whereClause(v):
-        #         print(v)
-
         temp = [v for v in self.GetRawVariables(id_.DataNode) if (v.AocType, v.Novelty) == id_.AocStep and whereClause(v)]
         return temp[-1].Values if temp else []
 
