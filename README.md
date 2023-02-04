@@ -19,7 +19,7 @@ In addition, the Python translation is much more primitive than the original
 because of the following reasons.
 
 * All constructs for asynchronous communication in the original code 
-  are ignored. All the asynchronous calls are treated as static function calls in the static translation.
+  are ignored. All the asynchronous calls are treated as static function calls in the translation.
 
 * The original code depends on proprietary libraries that are not open-sourced.
   Mock classes, such as `IScope` and `IQuerySource` are defined to mimic the behaviour of the interfaces
