@@ -40,8 +40,8 @@ class PortfolioView:
 
 
 class StructureType:
-    None_ = 0
-    AoC = 1
+    None_ = 'None'      #0
+    AoC = 'AoC'        #1
 
 
 class State:
@@ -56,10 +56,10 @@ class Periodicity:
     
 
 class InputSource:
-    NotApplicable = 0
-    Opening = 1
-    Actual = 2
-    Cashflow = 4
+    NotApplicable = "NotApplicable" #0
+    Opening = "Opening" #1
+    Actual = "Actual" #2
+    Cashflow = "Cashflow"   #4
 
 
 class DataType:

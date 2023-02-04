@@ -115,7 +115,14 @@ class ImportStorage:
 
         #EstimateType to load and to update
 
-        self.EstimateTypesByImportFormat = {str(x): [et.SystemName for et in estimateTypes if x in et.InputSource] for x in [InputSource.Opening, InputSource.Actual, InputSource.Cashflow]}
+        temp = [InputSource.Opening, InputSource.Actual, InputSource.Cashflow]
+        temp2 = {}
+        for x in temp:
+            temp2[str(x)] = {et.SystemName for et in estimateTypes if x in et.InputSource}
+
+        self.EstimateTypesByImportFormat = temp2
+
+        # self.EstimateTypesByImportFormat = {str(x): [et.SystemName for et in estimateTypes if x in et.InputSource] for x in [InputSource.Opening, InputSource.Actual, InputSource.Cashflow]}
 
         #ProjectionConfiguration : Current Period + projection for every Quarter End for current Year and next Years as in projectionConfiguration.csv
 
@@ -307,8 +314,8 @@ class ImportStorage:
         if(self.DefaultPartition != self.TargetPartition):
 
             self.querySource.Partition.SetAsync(PartitionByReportingNodeAndPeriod, self.DefaultPartition)
-            defaultRawVariables = [rv for rv in self.querySource.Query(RawVariable) if rv.Partition == DefaultPartition and rv.DataNode in primaryScope]
-            defaultIfrsVariables = [iv for iv in self.querySource.Query(IfrsVariable) if iv.Partition == DefaultPartition and
+            defaultRawVariables = [rv for rv in self.querySource.Query(RawVariable) if rv.Partition == self.DefaultPartition and rv.DataNode in primaryScope]
+            defaultIfrsVariables = [iv for iv in self.querySource.Query(IfrsVariable) if iv.Partition == self.DefaultPartition and
                 (iv.DataNode in primaryScopeFromParsedVariables
                 and not iv.EstimateType in self.EstimateTypesByImportFormat[self.ImportFormat]
                 or iv.DataNode in primaryScopeFromLinkedReinsurance
@@ -447,7 +454,7 @@ class ImportStorage:
                  economicBasis: Optional[str] =  None,
                  accidentYear: Optional[int] = None
                  ) -> float:
-        if isinstance(amountTypeORwhereClause, str):
+        if isinstance(amountTypeORwhereClause, str) or amountTypeORwhereClause is None:
             amountType = amountTypeORwhereClause
             return self.GetValue(
                 id, lambda v: (v.AccidentYear == accidentYear and v.AmountType == amountType
@@ -455,7 +462,7 @@ class ImportStorage:
         else:
             whereClause = amountTypeORwhereClause
             vals = [v.Value for v in self.GetIfrsVariables(id.DataNode) if (v.AocType, v.Novelty) == id.AocStep and whereClause(v)]
-            return vals[-1] if vars else 0    # Aggregate() returns last element
+            return vals[-1] if vals else 0    # Aggregate() returns last element
 
     #Novelty
 
@@ -543,8 +550,8 @@ class ImportStorage:
 
     # Other
 
-    def GetNonAttributableAmountType(self) -> list[str]:
-        return [AmountTypes.NE]
+    def GetNonAttributableAmountType(self) -> set[str]:
+        return {AmountTypes.NE}
 
     def GetAttributableExpenseAndCommissionAmountType(self) -> list[str]:
         return [AmountTypes.ACA, AmountTypes.AEA] #U+ specific

@@ -109,16 +109,20 @@ Import.FromFile("Files/DataNodeParameters_CH_2020_12.xlsx", DataSource, format_=
 # Workspace.InitializeFrom(DataSource);
 
 
-
+Import.FromFile("Files/Openings_CH_2020_12.xlsx", DataSource, format_=ImportFormats.Opening)
 # await Import.FromFile("../Files/TransactionalData/Openings_CH_2020_12.csv").WithFormat(ImportFormats.Opening).WithTarget(DataSource).ExecuteAsync()
 
 Import.FromFile("Files/NominalCashflows_CH_2020_12.xlsx", DataSource, format_=ImportFormats.Cashflow)
 
 # await Import.FromFile("../Files/TransactionalData/Actuals_CH_2020_12.csv").WithFormat(ImportFormats.Actual).WithTarget(DataSource).ExecuteAsync()
+Import.FromFile("Files/Actuals_CH_2020_12.xlsx", DataSource, format_=ImportFormats.Actual)
+
 
 Import.FromFile("Files/NominalCashflows_CH_2021_3.xlsx", DataSource, format_=ImportFormats.Cashflow)
 # await Import.FromFile("../Files/TransactionalData/NominalCashflows_CH_2021_3.csv").WithFormat(ImportFormats.Cashflow).WithTarget(DataSource).ExecuteAsync()
+Import.FromFile("Files/Actuals_CH_2021_3.xlsx", DataSource, format_=ImportFormats.Actual)
 # await Import.FromFile("../Files/TransactionalData/Actuals_CH_2021_3.csv").WithFormat(ImportFormats.Actual).WithTarget(DataSource).ExecuteAsync()
+Import.FromFile("Files/SimpleValue_CH_2020_12.xlsx", DataSource, format_=ImportFormats.SimpleValue)
 # await Import.FromFile("../Files/TransactionalData/SimpleValue_CH_2020_12.csv").WithFormat(ImportFormats.SimpleValue ).WithTarget(DataSource).ExecuteAsync()
 # await Import.FromFile("../Files/TransactionalData/NominalCashflows_CH_2020_12_MTUP10pct.csv").WithFormat(ImportFormats.Cashflow).WithTarget(DataSource).ExecuteAsync()
 

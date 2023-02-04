@@ -1,4 +1,6 @@
 import dataclasses
+import uuid
+
 import numpy as np
 import pandas as pd
 from . import Import
@@ -143,8 +145,8 @@ class ParsingStorage:
         # DimensionsWithExternalId
 
         self.DimensionsWithExternalId = {
-            type(self.AmountType): self.GetDimensionWithExternalIdDictionaryAsync(AmountType),
-            type(self.EstimateType): self.GetDimensionWithExternalIdDictionaryAsync(EstimateType)
+            AmountType: self.GetDimensionWithExternalIdDictionaryAsync(AmountType),
+            EstimateType: self.GetDimensionWithExternalIdDictionaryAsync(EstimateType)
         }
 
         # # Hierarchy Cache
@@ -165,7 +167,9 @@ class ParsingStorage:
                     continue
                     
                 for extId in externalIds:
-                    if item.SystemName not in dict_:
+                    if not extId:
+                        continue    # skip ''
+                    if extId not in dict_:
                         dict_[extId] = item.SystemName
 
         return dict_
@@ -189,7 +193,7 @@ class ParsingStorage:
             for elm in self.TechnicalMarginEstimateTypes:
                 self.estimateTypes.remove(elm)
 
-        if et in allowedEstimateTypes:
+        if et not in allowedEstimateTypes:
             raise EstimateTypeNotFound
 
         return et
@@ -852,7 +856,8 @@ def _DefineFormatCashflow(options, dataSet: IDataSet):
     #     for x in s.CalculatedIfrsVariables:
     #         ivs.append(x)
 
-    ivs = sorted([x for s in universe.GetScopes(ComputeIfrsVarsCashflows, identities) for x in s.CalculatedIfrsVariables])
+    # ivs = sorted([x for s in universe.GetScopes(ComputeIfrsVarsCashflows, identities) for x in s.CalculatedIfrsVariables])
+    ivs = [x for s in universe.GetScopes(ComputeIfrsVarsCashflows, identities) for x in s.CalculatedIfrsVariables]
 
     # # For debug
     # ivs = []
@@ -882,27 +887,216 @@ Import.DefineFormat(ImportFormats.Cashflow, _DefineFormatCashflow)
 # Actuals
 
 def ParseActualsToWorkspaceAsync(dataSet: IDataSet, args: ImportArgs, workspace: IWorkspace):
-    pass
+
+    # workspace.Reset(x => x.ResetInitializationRules().ResetCurrentPartitions())
+    workspace.Initialize(DataSource, [RawVariable, IfrsVariable])
+
+    # Activity.Start()
+    parsingStorage = ParsingStorage(args, DataSource, workspace)
+    parsingStorage.InitializeAsync()
+
+    # if(Activity.HasErrors()) return Activity.Finish()
+
+    def _FromDataSetActuals(dataset, datarow):
+
+        dataNode = datarow["DataNode"]
+
+        dataNodeData = parsingStorage.DataNodeDataBySystemName.get(dataNode, None)
+
+        if not dataNodeData:
+            raise InvalidDataNode
+
+        valueType = datarow["ValueType"]
+
+        if not valueType:
+            raise ValueTypeNotFound
+
+        amountType = parsingStorage.DimensionsWithExternalId[AmountType].get(valueType, None)
+        isStdActual = valueType in parsingStorage.AmountType
+        estimateType = EstimateTypes.A if isStdActual else parsingStorage.DimensionsWithExternalId[EstimateType].get(valueType, None)
+
+        if not estimateType or not amountType:
+            raise ValueTypeNotValid
+
+        aocType = datarow["AocType"]
+
+        if((not isStdActual and aocType != AocTypes.CF and aocType != AocTypes.WO) or (isStdActual and aocType != AocTypes.CF)):
+            raise AocTypeNotValid
+
+        item = IfrsVariable(
+            Id=uuid.uuid4(),
+            DataNode = dataNode,
+            AocType = aocType,
+            Novelty = Novelties.C,
+            AccidentYear = int(datarow["AccidentYear"]) if datarow["AccidentYear"] else None,
+            EconomicBasis=None,
+            AmountType = amountType,
+            EstimateType = estimateType,
+            Partition = parsingStorage.TargetPartitionByReportingNodeAndPeriod.Id,
+            Value = GetSign((aocType, amountType, estimateType, dataNodeData.IsReinsurance), parsingStorage.HierarchyCache) * datarow["Value"]
+        )
+        return item
+
+    importLog = Import.FromDataSet(dataSet, IfrsVariable, workspace, _FromDataSetActuals, format_=ImportFormats.Actual)
+    
+
+    # await ValidateForDataNodeStateActiveAsync<IfrsVariable>(workspace, parsingStorage.DataNodeDataBySystemName)
+    # return Activity.Finish().Merge(importLog)
+
 
 def _DefineFormatActual(options, dataSet: IDataSet):
-    pass
+
+    # Activity.Start()
+    args = GetArgsFromMainAsync(PartitionByReportingNodeAndPeriod, dataSet) #
+    args.ImportFormat = ImportFormats.Actual
+    DataNodeFactoryAsync(dataSet, ImportFormats.Actual, args)
+    # if(Activity.HasErrors()) return Activity.Finish()
+
+    workspace = IWorkspace()
+    parsingLog = ParseActualsToWorkspaceAsync(dataSet, args, workspace)
+    # if(parsingLog.Errors.Any()) return Activity.Finish().Merge(parsingLog)
+
+    storage = ImportStorage(args, DataSource, workspace)
+    storage.InitializeAsync()
+    # if(Activity.HasErrors()) return Activity.Finish().Merge(parsingLog)
+
+    universe = IModel(storage)
+    identities = sorted([i for s in universe.GetScopes(GetIdentities, storage.DataNodesByImportScope[ImportScope.Primary]) for i in s.Identities])
+
+    ivs = [x for s in universe.GetScopes(ComputeIfrsVarsActuals, identities) for x in  s.CalculatedIfrsVariables]
+    # if(Activity.HasErrors()) return Activity.Finish().Merge(parsingLog)
+
+    workspace.UpdateAsync(IfrsVariable, ivs)
+    CommitToDatabase(IfrsVariable, workspace,
+                     storage.TargetPartition,
+                     snapshot=True,
+                     filter=lambda x: x.EstimateType in storage.EstimateTypesByImportFormat[ImportFormats.Actual] and
+                                   x.DataNode in storage.DataNodesByImportScope[ImportScope.Primary])
+
+    # return Activity.Finish().Merge(parsingLog)
+
 
 Import.DefineFormat(ImportFormats.Actual, _DefineFormatActual)
 
 # Simple Value
 
 def ParseSimpleValueToWorkspaceAsync(dataSet: IDataSet, args: ImportArgs, targetPartitionByReportingNodeAndPeriodId: Guid, workspace: IWorkspace):
-    pass
+
+    # workspace.Reset(x => x.ResetInitializationRules().ResetCurrentPartitions())
+    workspace.Initialize(DataSource, [RawVariable, IfrsVariable])
+
+    # Activity.Start()
+    importFormat = args.ImportFormat
+    parsingStorage = ParsingStorage(args, DataSource, workspace)
+    parsingStorage.InitializeAsync()
+    # if(Activity.HasErrors()) return Activity.Finish();
+
+
+    def _FromDataSetSimpleValue(dataset, datarow):
+
+            dataNode = parsingStorage.ValidateDataNode(datarow["DataNode"])
+            amountType = parsingStorage.ValidateAmountType(datarow["AmountType"])
+            estimateType = parsingStorage.ValidateEstimateType(datarow["EstimateType"], dataNode)    #TODO LIC/LRC dependence
+
+            aocStep = parsingStorage.ValidateAocStep(AocStep(datarow["AocType"], datarow["Novelty"])) if importFormat == ImportFormats.SimpleValue else AocStep(AocTypes.BOP, Novelties.I)
+            economicBasis = datarow["EconomicBasis"] if importFormat == ImportFormats.SimpleValue else None
+            parsingStorage.ValidateEstimateTypeAndAmountType(estimateType, amountType)
+
+            iv = IfrsVariable(
+                Id=uuid.uuid4(),
+                DataNode = dataNode,
+                AocType = aocStep.AocType,
+                Novelty = aocStep.Novelty,
+                AccidentYear=int(datarow["AccidentYear"]) if datarow["AccidentYear"] else 0,
+                AmountType = amountType,
+                EstimateType = estimateType,
+                EconomicBasis = economicBasis,
+                Partition = parsingStorage.TargetPartitionByReportingNodeAndPeriod.Id,
+                Value = GetSign((aocStep.AocType, amountType, estimateType, parsingStorage.IsDataNodeReinsurance(dataNode)), parsingStorage.HierarchyCache) * datarow["Value"]
+
+            )
+            return iv
+
+    importLog = Import.FromDataSet(dataSet, IfrsVariable, workspace, _FromDataSetSimpleValue, format_=importFormat)    # This should indicate the table name, not the input format
+
+    # Checking if there are inconsistencies in the TechnicalMarginEstimateTypes --> double entries in the steps where we expect to have unique values
+
+    temp = [iv for iv in workspace.Query(IfrsVariable) if iv.EstimateType in parsingStorage.TechnicalMarginEstimateTypes]
+    temp = [iv for iv in temp if iv.AocType == AocTypes.BOP or iv.AocType == AocTypes.EOP or iv.AocType == AocTypes.AM or iv.AocType == AocTypes.EA]
+    temp2 = {}
+
+    for iv in temp:
+        temp2.setdefault((iv.DataNode, iv.AocType, iv.Novelty), []).append(iv)
+
+    invalidVariables = [k for k, v in temp2.items() if len(v) > 1]
+    if invalidVariables:
+        raise MultipleTechnicalMarginOpening
+
+    # await ValidateForDataNodeStateActiveAsync<IfrsVariable>(workspace, parsingStorage.DataNodeDataBySystemName)
+    targetPartitionByReportingNodeAndPeriodId = parsingStorage.TargetPartitionByReportingNodeAndPeriod.Id
+    # return Activity.Finish().Merge(importLog)
+
+
 
 def _DefineFormatSimpleValue(options, dataSet: IDataSet):
-    pass
+
+    # Activity.Start()
+    args = GetArgsFromMainAsync(PartitionByReportingNodeAndPeriod, dataSet)
+    args.ImportFormat = ImportFormats.SimpleValue
+    DataNodeFactoryAsync(dataSet, ImportFormats.SimpleValue, args)
+    # if(Activity.HasErrors()) return Activity.Finish()
+
+
+    partitionId: Guid = uuid.uuid4()
+    workspace = IWorkspace()
+    parsingLog = ParseSimpleValueToWorkspaceAsync(dataSet, args, partitionId, workspace)
+    # if(parsingLog.Errors.Any()) return Activity.Finish().Merge(parsingLog)
+
+    # {(v.DataNode, v.AccidentYear) for v in workspace.Query(IfrsVariable)}
+
+    CommitToDatabase(IfrsVariable, workspace,
+                                         partitionId,
+                                         snapshot=True,
+                                         filter= lambda x: x.DataNode in [v.DataNode for v in workspace.Query(IfrsVariable)])
+
+
+    # return Activity.Finish().Merge(parsingLog)
+
 
 Import.DefineFormat(ImportFormats.SimpleValue, _DefineFormatSimpleValue)
 
 # Opening
 
 def _DefineFormatOpening(options, dataSet: IDataSet):
-    pass
+
+    # Activity.Start()
+    args = GetArgsFromMainAsync(PartitionByReportingNodeAndPeriod, dataSet)
+    args.ImportFormat = ImportFormats.Opening
+    DataNodeFactoryAsync(dataSet, ImportFormats.Opening, args)
+    # if(Activity.HasErrors()) return Activity.Finish()
+
+    partitionId: Guid = uuid.uuid4()
+    workspace = IWorkspace()
+    parsingLog = ParseSimpleValueToWorkspaceAsync(dataSet, args, partitionId, workspace)
+    # if(parsingLog.Errors.Any()) return Activity.Finish().Merge(parsingLog)
+
+    storage = ImportStorage(args, DataSource, workspace)
+    storage.InitializeAsync()
+    # if(Activity.HasErrors()) return Activity.Finish().Merge(parsingLog)
+
+    universe = IModel(storage)
+    identities = sorted([i for s in universe.GetScopes(GetIdentities, storage.DataNodesByImportScope[ImportScope.Primary]) for i in s.Identities])    #.SelectMany(s => s.Identities)
+    ivs = [x for s in universe.GetScopes(ComputeIfrsVarsOpenings, identities) for x in s.CalculatedIfrsVariables]
+    # if(Activity.HasErrors()) return Activity.Finish().Merge(parsingLog)
+
+    workspace.UpdateAsync(IfrsVariable, ivs)
+    CommitToDatabase(IfrsVariable, workspace,
+                                         storage.TargetPartition,
+                                         snapshot=True,
+                                         filter= lambda x: x.EstimateType in storage.EstimateTypesByImportFormat[ImportFormats.Opening] and x.DataNode in storage.DataNodesByImportScope[ImportScope.Primary])
+
+    # return Activity.Finish().Merge(parsingLog)
+
 
 Import.DefineFormat(ImportFormats.Opening, _DefineFormatOpening)
 
