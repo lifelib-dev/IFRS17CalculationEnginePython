@@ -30,8 +30,11 @@ because of the following reasons.
   but it may fail to do so as the data used in the videos may not be 
   the same as the data provided in the repository.
 
-* The files in the ifrs17/Report directory in the original repository are not translated
+* Cotents of the ifrs17/Report directory in the original repository are not translated
   as the IFRS17 calculations are carried out at the import step. 
+  Alternatively, `ReportScopes.ipynb` depicts how reporting variables are filtered
+  to output each balance sheet item. PnLMapping.xlsx depicts how reporting variables
+  are mapped to the PnL variables.
 
 * The Python translation is written to read all input data from Excel files,
   so all the CSV files in the original repository are converted to Excel files.
