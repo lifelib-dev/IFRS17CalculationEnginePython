@@ -64,7 +64,7 @@ def GetPreviousIdentities(identities: list[AocStep]) -> dict[AocStep, list[AocSt
     temp = {}
     for id_ in identities:
         if id_.AocType != AocTypes.BOP:
-            ret = [v for v in previousStep.values() if v] if id_.AocType == AocTypes.CL else [previousStep[id_.Novelty]]    # previousStep.Where(kvp => kvp.Value != null).Select(kvp => kvp.Value).ToArray()
+            ret = [v for v in previousStep.values() if v] if id_.AocType == AocTypes.CL else [previousStep[id_.Novelty]] if previousStep[id_.Novelty] else []   # previousStep.Where(kvp => kvp.Value != null).Select(kvp => kvp.Value).ToArray()
             previousStep[id_.Novelty] = AocStep(id_.AocType, id_.Novelty)
             temp[id_] = ret
 
