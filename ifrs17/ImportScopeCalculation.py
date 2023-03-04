@@ -501,11 +501,11 @@ class DiscountedCreditRiskCashflow(DiscountedCashflow):
     @property
     def nonPerformanceRiskRate(self) -> float:
         return self.GetStorage().GetNonPerformanceRiskRate(self.Identity.Id)
-        
+
 
     @property
     def Values(self) -> list[float]:
-        return -1 * ComputeDiscountAndCumulateWithCreditDefaultRisk(self.NominalValues, self.MonthlyDiscounting, self.nonPerformanceRiskRate)     # we need to flip the sign to create a reserve view
+        return [-1 * x for x in ComputeDiscountAndCumulateWithCreditDefaultRisk(self.NominalValues, self.MonthlyDiscounting, self.nonPerformanceRiskRate)]     # we need to flip the sign to create a reserve view
 
 
 DiscountedCashflow.Applicability = {
@@ -743,9 +743,6 @@ class PvLocked(IScope):     #<ImportIdentity, ImportStorage>
         temp = self.GetScope(ValidAmountType, self.Identity.DataNode).BeAmountTypes
         temp2 = []
         for at in temp:
-
-            # if self.Identity.AocType == 'BOP' and self.Identity.Novelty == 'I':
-            #     print('stop')
 
             # # Debug
             # for ay in self.accidentYears:
