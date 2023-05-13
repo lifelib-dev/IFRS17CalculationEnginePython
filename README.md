@@ -1,5 +1,7 @@
 # IFRS17CalculationEngine Python translation
 
+**:warning: The work here is merged into https://lifelib.io/libraries/ifrs17a/. This repository has fulfilled its purpose and will not be developed further.**
+
 This repository contains a translation of
 [IFRS 17 Calculation Engine][1]
 into Python.
